@@ -358,7 +358,43 @@ export class HackathonsService {
       },
     });
 
-    return participations.map(p => p.hackathon);
+    // Get user's submissions for these hackathons
+    const hackathonIds = participations.map(p => p.hackathon.id);
+    const userSubmissions = await this.prisma.submission.findMany({
+      where: {
+        hackathonId: { in: hackathonIds },
+        participant: { userId },
+      },
+      include: {
+        participant: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+        files: true,
+      },
+    });
+
+    // Map submissions to hackathons
+    return participations.map(p => ({
+      ...p.hackathon,
+      submissions: userSubmissions
+        .filter(s => s.hackathonId === p.hackathon.id)
+        .map(s => ({
+          ...s,
+          submitter: s.participant?.user,
+          isDraft: s.status === 'DRAFT',
+          isFinal: s.status === 'SUBMITTED',
+          submitterId: s.participant?.userId,
+        })),
+    }));
   }
 
   async getParticipants(hackathonId: string) {
@@ -414,6 +450,7 @@ export class HackathonsService {
         return {
           ...participant,
           hasSubmission: !!submission,
+          submissionId: submission?.id || null,
         };
       }),
     );

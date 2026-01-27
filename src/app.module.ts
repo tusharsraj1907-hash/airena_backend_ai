@@ -12,7 +12,6 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { AIModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -46,7 +45,6 @@ import { AIModule } from './ai/ai.module';
     NotificationsModule,
     AnalyticsModule,
     UploadsModule,
-    AIModule,
   ],
 })
 export class AppModule {}

@@ -123,6 +123,9 @@ export class SubmissionsService {
       submitter: submission.participant?.user,
       teamInfo: submission.team,
       files: createDto.files || [],
+      repositoryUrl: submission.repoUrl, // Map repoUrl to repositoryUrl for frontend compatibility
+      type: submission.teamId ? 'TEAM' : 'INDIVIDUAL', // Determine submission type
+      selectedTrack: submission.participant?.selectedTrack, // Get selected track from participant
     };
   }
 
@@ -148,12 +151,29 @@ export class SubmissionsService {
       };
     }
 
-    // Role-based filtering - ONLY filter for participants when they don't specify userId
+    // Role-based filtering
     if (userRole === 'PARTICIPANT' && !filters?.userId) {
+      // Participants can only see their own submissions
       where.participant = {
         userId: userId,
       };
+    } else if (userRole === 'ORGANIZER' && !filters?.hackathonId && !filters?.userId) {
+      // Organizers can see all submissions for their hackathons
+      const organizerHackathons = await this.prisma.hackathon.findMany({
+        where: { organizerId: userId },
+        select: { id: true },
+      });
+      
+      if (organizerHackathons.length > 0) {
+        where.hackathonId = {
+          in: organizerHackathons.map(h => h.id),
+        };
+      } else {
+        // If organizer has no hackathons, return empty array
+        return [];
+      }
     }
+    // JUDGES and ADMINS can see all submissions (no additional filtering)
 
     const submissions = await this.prisma.submission.findMany({
       where,
@@ -186,6 +206,21 @@ export class SubmissionsService {
             },
           },
         },
+        hackathon: {
+          select: {
+            id: true,
+            title: true,
+            problemStatements: {
+              select: {
+                trackNumber: true,
+                trackTitle: true,
+              },
+              orderBy: {
+                trackNumber: 'asc',
+              },
+            },
+          },
+        },
         files: true,
       },
       orderBy: {
@@ -200,6 +235,24 @@ export class SubmissionsService {
       isDraft: submission.status === 'DRAFT',
       isFinal: submission.status === 'SUBMITTED',
       submitterId: submission.participant?.userId,
+      repositoryUrl: submission.repoUrl, // Map repoUrl to repositoryUrl for frontend compatibility
+      type: submission.teamId ? 'TEAM' : 'INDIVIDUAL', // Determine submission type
+      selectedTrack: submission.participant?.selectedTrack, // Get selected track from participant
+      // Map problem statements to tracks format for frontend compatibility
+      hackathon: {
+        ...submission.hackathon,
+        tracks: submission.hackathon.problemStatements?.map(ps => ({
+          title: ps.trackTitle,
+          number: ps.trackNumber,
+        })) || [],
+      },
+      files: submission.files?.map(file => ({
+        name: file.fileName,
+        url: file.fileUrl,
+        type: file.fileType,
+        size: file.fileSize,
+        downloadUrl: file.fileUrl,
+      })) || [],
     }));
   }
 
@@ -235,6 +288,21 @@ export class SubmissionsService {
             },
           },
         },
+        hackathon: {
+          select: {
+            id: true,
+            title: true,
+            problemStatements: {
+              select: {
+                trackNumber: true,
+                trackTitle: true,
+              },
+              orderBy: {
+                trackNumber: 'asc',
+              },
+            },
+          },
+        },
         files: true,
       },
     });
@@ -258,6 +326,24 @@ export class SubmissionsService {
       isDraft: submission.status === 'DRAFT',
       isFinal: submission.status === 'SUBMITTED',
       submitterId: submission.participant?.userId,
+      repositoryUrl: submission.repoUrl, // Map repoUrl to repositoryUrl for frontend compatibility
+      type: submission.teamId ? 'TEAM' : 'INDIVIDUAL', // Determine submission type
+      selectedTrack: submission.participant?.selectedTrack, // Get selected track from participant
+      // Map problem statements to tracks format for frontend compatibility
+      hackathon: {
+        ...submission.hackathon,
+        tracks: submission.hackathon.problemStatements?.map(ps => ({
+          title: ps.trackTitle,
+          number: ps.trackNumber,
+        })) || [],
+      },
+      files: submission.files?.map(file => ({
+        name: file.fileName,
+        url: file.fileUrl,
+        type: file.fileType,
+        size: file.fileSize,
+        downloadUrl: file.fileUrl,
+      })) || [],
     };
   }
 
@@ -339,6 +425,16 @@ export class SubmissionsService {
       isDraft: updatedSubmission.status === 'DRAFT',
       isFinal: updatedSubmission.status === 'SUBMITTED',
       submitterId: updatedSubmission.participant?.user?.id,
+      repositoryUrl: updatedSubmission.repoUrl, // Map repoUrl to repositoryUrl for frontend compatibility
+      type: updatedSubmission.teamId ? 'TEAM' : 'INDIVIDUAL', // Determine submission type
+      selectedTrack: updatedSubmission.participant?.selectedTrack, // Get selected track from participant
+      files: updatedSubmission.files?.map(file => ({
+        name: file.fileName,
+        url: file.fileUrl,
+        type: file.fileType,
+        size: file.fileSize,
+        downloadUrl: file.fileUrl,
+      })) || [],
     };
   }
 

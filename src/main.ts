@@ -41,17 +41,6 @@ async function bootstrap() {
   }
   
   // Check optional but recommended variables
-  const aiServiceUrl = configService.get<string>('AI_SERVICE_URL');
-  const aiServiceApiKey = configService.get<string>('AI_SERVICE_API_KEY');
-  if (!aiServiceUrl || !aiServiceApiKey || aiServiceApiKey === 'default-api-key') {
-    console.warn('⚠️  AI Service configuration not set. AI features will have limited functionality.');
-    console.warn('   Set AI_SERVICE_URL and AI_SERVICE_API_KEY in .env for full AI features.');
-    console.warn('   Default values will be used: AI_SERVICE_URL=http://localhost:8000, AI_SERVICE_API_KEY=default-api-key');
-  } else {
-    console.log('✅ AI Service configured');
-  }
-  
-  // Database connection check
   const databaseUrl = configService.get<string>('DATABASE_URL');
   if (databaseUrl) {
     console.log('✅ Database URL configured');
@@ -92,7 +81,6 @@ async function bootstrap() {
   console.log(`\n📋 Configuration Status:`);
   console.log(`   - Database: ${databaseUrl ? '✅ Configured' : '❌ Missing'}`);
   console.log(`   - JWT Secret: ${jwtSecret ? '✅ Configured' : '❌ Missing'}`);
-  console.log(`   - AI Service: ${aiServiceUrl && aiServiceApiKey && aiServiceApiKey !== 'default-api-key' ? '✅ Configured' : '⚠️  Using defaults'}`);
   console.log('');
 }
 
